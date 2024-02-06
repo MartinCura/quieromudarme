@@ -1,0 +1,253 @@
+# TODO: move to repo root
+# TODO: clean this file up
+# TODO: can compare with https://medium.com/@hero710690/securing-your-airflow-on-production-building-docker-images-with-less-vulnerabilities-7f42e096b885
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Basic Airflow cluster configuration
+#
+# WARNING: This configuration is for local development. Do not use it in a production deployment. ~ :P
+#
+# This configuration supports basic configuration using environment variables or a .env file
+# The following variables are supported:
+#
+# Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
+#
+# _AIRFLOW_WWW_USER_USERNAME   - Username for the administrator account (if requested).
+#                                Default: airflow
+# _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
+#                                Default: airflow
+---
+name: quieromudarme
+
+x-airflow-common: &airflow-common
+    build:
+        context: .
+        dockerfile: qm_airflow/Dockerfile
+        # target: ${ENV:-dev}
+        target: dev
+    # TODO: don't like this, not the recommended approach, but gave up on fixing it... fix it.
+    user: "1000:0"
+    volumes:
+        - edgedb-config:/home/airflow/.config/edgedb
+        - ./qm_airflow/dags:/opt/airflow/dags
+        - ./qm_airflow/logs:/opt/airflow/logs
+        - ./qm_airflow/config:/opt/airflow/config
+        - ./qm_airflow/plugins:/opt/airflow/plugins
+        - ./quieromudarme:/opt/app/quieromudarme
+    env_file:
+        - .env
+    environment: &airflow-common-env
+        AIRFLOW_UID: "1000"  # TODO: unnecessary
+        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+        AIRFLOW__CORE__EXECUTOR: LocalExecutor
+        AIRFLOW__CORE__PARALLELISM: 2
+        AIRFLOW__CORE__FERNET_KEY: ""
+        AIRFLOW__WEBSERVER__SECRET_KEY: "ifyouseethissomeonemessedup"
+        AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+        AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+        AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
+        AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+        PYTHONPATH: /opt/app
+        EDGEDB_INSTANCE: db
+
+services:
+    edgedb:
+        image: edgedb/edgedb:4.7
+        restart: always
+        ports:
+            - "${EDGEDB_EXT_PORT:-5656}:5656"
+        volumes:
+            - edgedb-db-volume:/var/lib/edgedb/data
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "curl",
+                    "--fail",
+                    "http://localhost:5656/server/status/alive",
+                ]
+            interval: 20s
+            timeout: 10s
+            retries: 5
+            start_period: 20s
+        environment:
+            EDGEDB_SERVER_SECURITY: insecure_dev_mode
+            EDGEDB_SERVER_ADMIN_UI: enabled
+            EDGEDB_SERVER_PASSWORD: ${EDGEDB_PASS:-edgedb}
+
+    edgedb-init:
+        image: edgedb/edgedb-cli:4.1.0
+        profiles:
+          - init
+        volumes:
+            - edgedb-config:/.config/edgedb
+        depends_on:
+            edgedb:
+                condition: service_healthy
+        command: "--dsn edgedb://edgedb:${EDGEDB_PASS:-edgedb}@edgedb:5656/edgedb instance link db --non-interactive --trust-tls-cert --overwrite"
+
+    chatbot:
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+            target: ${ENV:-dev}
+        restart: unless-stopped
+        volumes:
+            - edgedb-config:/root/.config/edgedb
+            - ./edgedb.toml:/opt/app/edgedb.toml
+            - ./dbschema:/opt/app/dbschema
+            - ./poetry.lock:/opt/app/poetry.lock
+            - ./pyproject.toml:/opt/app/pyproject.toml
+            - ./quieromudarme:/opt/app/quieromudarme
+            - ./logs:/opt/app/logs
+            # TODO: add /static
+        env_file:
+            - .env
+        environment:
+            EDGEDB_INSTANCE: db
+        depends_on:
+            edgedb:
+                condition: service_healthy
+
+    # TODO: can i reuse this postgres for both edgedb for app and the db used by airflow?
+    postgres:
+        image: postgres:15
+        restart: always
+        ports:
+            - "5445:5432"
+        volumes:
+            - postgres-db-volume:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "airflow"]
+            interval: 10s
+            retries: 5
+            start_period: 5s
+        environment:
+            POSTGRES_USER: airflow
+            POSTGRES_PASSWORD: airflow
+            POSTGRES_DB: airflow
+
+    airflow-scheduler:
+        <<: *airflow-common
+        command: scheduler
+        restart: unless-stopped
+        shm_size: 3g
+        depends_on:
+            postgres:
+                condition: service_healthy
+            edgedb:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 30s
+
+    airflow-webserver:
+        <<: *airflow-common
+        command: webserver
+        restart: unless-stopped
+        ports:
+            - "8080:8080"
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 30s
+
+    airflow-init:
+        <<: *airflow-common
+        profiles:
+          - init
+        user: "0:0"
+        volumes:
+            - ./qm_airflow:/sources
+        environment:
+            <<: *airflow-common-env
+            _AIRFLOW_DB_MIGRATE: "true"
+            _AIRFLOW_WWW_USER_CREATE: "true"
+            _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+            _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+        entrypoint: /bin/bash
+        # yamllint disable rule:line-length
+        command:
+            - -c
+            - |
+                one_meg=1048576
+                mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
+                cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
+                disk_available=$$(df / | tail -1 | awk '{print $$4}')
+                warning_resources="false"
+                if (( mem_available < 4000 )) ; then
+                echo
+                echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
+                echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
+                echo
+                warning_resources="true"
+                fi
+                if (( cpus_available < 2 )); then
+                echo
+                echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
+                echo "At least 2 CPUs recommended. You have $${cpus_available}"
+                echo
+                warning_resources="true"
+                fi
+                if (( disk_available < one_meg * 10 )); then
+                echo
+                echo -e "\033[1;33mWARNING!!!: Not enough Disk space available for Docker.\e[0m"
+                echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
+                echo
+                warning_resources="true"
+                fi
+                if [[ $${warning_resources} == "true" ]]; then
+                echo
+                echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
+                echo "Please follow the instructions to increase amount of resources available:"
+                echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
+                echo
+                fi
+                mkdir -p /sources/logs /sources/dags /sources/plugins
+                chown -R "1000:0" /sources/{logs,dags,plugins}
+                # TODO: should i reactivate this migrate?
+                # exec /entrypoint airflow db migrate
+                exec /entrypoint airflow version
+                # If necessary i could import some variables here
+                # airflow variables import /opt/airflow/vars.json
+        # yamllint enable rule:line-length
+
+    airflow-cli:
+        <<: *airflow-common
+        profiles:
+            - debug
+        environment:
+            <<: *airflow-common-env
+            CONNECTION_CHECK_MAX_COUNT: "0"
+        # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
+        command: ["bash", "-c", "airflow"]
+
+volumes:
+    postgres-db-volume:
+    edgedb-db-volume:
+    edgedb-config:
