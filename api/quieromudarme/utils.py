@@ -62,4 +62,4 @@ else:
             yield batch
 
 
-__all__ = ["slugify", "run_async_in_thread", "batched"]
+__all__ = ["batched", "run_async_in_thread", "slugify"]

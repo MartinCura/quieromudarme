@@ -39,13 +39,13 @@ def clean_search_url(url: str) -> str:
 
 
 __all__ = [
-    "airbnb",
-    "meli",
-    "zonaprop",
     "HousingPost",
-    "ProviderName",
     "ProviderConnector",
+    "ProviderName",
+    "airbnb",
     "clean_search_url",
     "get_provider_by_name",
     "get_provider_by_url",
+    "meli",
+    "zonaprop",
 ]

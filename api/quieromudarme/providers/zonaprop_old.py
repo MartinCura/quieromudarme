@@ -366,7 +366,7 @@ def parse_search_path(url: str) -> QueryPayload:  # noqa: PLR0915, PLR0912, C901
     elif "mas-de-50-anos" in path:
         building_age = 51
 
-    disposition_pattern = f'con-disposicion-({"|".join(rf"({d})" for d in DISPOSITIONS)})'
+    disposition_pattern = f"con-disposicion-({'|'.join(rf'({d})' for d in DISPOSITIONS)})"
     disposition_match = re.search(disposition_pattern, path)
     disposition = None if disposition_match is None else disposition_match.group(1)
     logger.info("found disposition: %s", disposition)
