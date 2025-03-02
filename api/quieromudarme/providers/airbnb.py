@@ -5,7 +5,7 @@ import logging
 import re
 from datetime import date
 from decimal import Decimal
-from typing import Any, Final, Literal, cast
+from typing import Annotated, Any, Final, Literal, cast
 
 import niquests
 import pydantic as pc
@@ -110,19 +110,24 @@ class DiscardPost(pc.BaseModel):
 class AirbnbSearchResult(pc.BaseModel):
     """Simplified search result from Airbnb's embedded JSON-in-HTML."""
 
-    search_results: list[AirbnbHousingPost | DiscardPost] = pc.Field(
-        discriminator="__typename",
-        validation_alias=pc.AliasPath(
-            "niobeMinimalClientData",
-            0,
-            1,
-            "data",
-            "presentation",
-            "staysSearch",
-            "results",
-            "searchResults",
-        ),
-    )
+    search_results: list[
+        Annotated[
+            AirbnbHousingPost | DiscardPost,
+            pc.Field(
+                discriminator="post_type",
+                validation_alias=pc.AliasPath(
+                    "niobeMinimalClientData",
+                    0,
+                    1,
+                    "data",
+                    "presentation",
+                    "staysSearch",
+                    "results",
+                    "searchResults",
+                ),
+            ),
+        ]
+    ]
     page_cursors: list[str] = pc.Field(
         validation_alias=pc.AliasPath(
             "niobeMinimalClientData",
