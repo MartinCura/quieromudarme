@@ -16,7 +16,7 @@ from quieromudarme import db
 from quieromudarme.etl import store_housing_posts
 from quieromudarme.logging import setup_logger
 from quieromudarme.providers import ProviderName, clean_search_url, get_provider_by_url
-from quieromudarme.settings import Env, cfg
+from quieromudarme.settings import cfg
 
 from . import content
 from .state import ConversationStatus, conversation_states
@@ -27,7 +27,7 @@ logger = setup_logger()
 def create_tg_client(*, start: bool = False) -> tg.TelegramClient:
     """Create a new Telegram client and start it."""
     # TODO: consider using different session strings for different callers
-    session_name = "bot"
+    session_name = f"bot-{cfg.tg_bot_id}"
     client = tg.TelegramClient(session_name, cfg.tg_app_api_id, cfg.tg_app_api_hash)
     if start:
         client.start(bot_token=cfg.tg_bot_token)
@@ -39,6 +39,11 @@ async def create_tg_client_async(*, start: bool = False) -> tg.TelegramClient:
     client = create_tg_client(start=False)
     if start:
         await client.start(bot_token=cfg.tg_bot_token)
+    me = await client.get_me()
+    logger.info(f"Bot started as @{me.username} ({me.id})")
+    if me.id != cfg.tg_bot_id:
+        error_msg = f"Bot started as @{me.username} ({me.id}), but expected {cfg.tg_bot_id}."
+        raise RuntimeError(error_msg)
     return client
 
 
@@ -659,7 +664,10 @@ async def run_async() -> None:
 
     @bot.on(tg.events.NewMessage(pattern=r"^!message \d+", incoming=True))  # type: ignore [misc]
     async def admin_message_handler(event: tg.events.NewMessage.Event) -> None:
-        """Send an admin message to a particular user. Admin-only."""
+        """Send an admin message to a particular user. Admin-only.
+
+        `!message <user_id> <message...>`
+        """
         await log_event(event)
         msg: str = event.message.message
         chat: tg.types.Chat = await event.get_chat()
@@ -681,8 +689,8 @@ async def run_async() -> None:
         await event.reply("✅ Mensaje enviado al usuario.")
 
     logger.info("Chatbot ONLINE.")
-    if cfg.env == Env.PROD:
-        await bot.send_message(cfg.admin_tg_user_id, "`Chatbot ONLINE.`")
+    # TODO: somehow only send once in dev if autorestarting
+    await bot.send_message(cfg.admin_tg_user_id, "`Chatbot ONLINE.`")
 
     await bot.run_until_disconnected()
 

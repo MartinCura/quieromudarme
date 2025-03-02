@@ -20,7 +20,7 @@ class Env(StrEnum):
 class _Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    env: Env
+    env: Env = Env.DEV
 
     # Chatbot settings
     tg_app_api_id: str
@@ -30,6 +30,10 @@ class _Settings(BaseSettings):
 
     # Providers settings
     mercadopago_access_token: str
+
+    @property
+    def tg_bot_id(self) -> TelegramID:
+        return int(self.tg_bot_token.split(":")[0])
 
 
 cfg = _Settings()

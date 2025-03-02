@@ -28,6 +28,9 @@ def setup_logger(
     logger.setLevel(level)
 
     if not logger.handlers and not RUNNING_IN_AIRFLOW:
+        # Create the directory for the log file if it doesn't exist
+        log_filepath.parent.mkdir(parents=True, exist_ok=True)
+
         file_handler = logging.FileHandler(log_filepath)
         file_handler.setFormatter(
             logging.Formatter(

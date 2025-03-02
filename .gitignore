@@ -1,5 +1,5 @@
 **/tmp/
-**/bot.session*
+**/bot*.session*
 
 api/qm_airflow/logs/
 !api/qm_airflow/logs/.gitkeep
