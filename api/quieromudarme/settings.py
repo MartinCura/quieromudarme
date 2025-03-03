@@ -5,7 +5,7 @@ from typing import Final
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from quieromudarme.chatbot.types import TelegramID
+from quieromudarme.chatbot.base import TelegramID
 
 MARTIN_TG_ID: Final = 195525674
 

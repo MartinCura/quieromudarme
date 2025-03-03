@@ -54,7 +54,7 @@ from quieromudarme.logging import setup_logger
 from quieromudarme.providers.common import gen_user_agent
 from quieromudarme.utils import slugify
 
-from .types import Currency, HousingPost, ProviderName
+from .base import Currency, HousingPost, ProviderName
 
 name = ProviderName.ZONAPROP
 

@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 
-from quieromudarme.chatbot.types import TelegramID
+from quieromudarme.chatbot.base import TelegramID
 from quieromudarme.logging import setup_logger
 
 logger = setup_logger()

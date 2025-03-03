@@ -4,7 +4,7 @@ from typing import Any, Protocol
 
 from quieromudarme import db
 
-from .types import HousingPost, ProviderName
+from .base import HousingPost, ProviderName
 
 
 class ProviderConnector(Protocol):

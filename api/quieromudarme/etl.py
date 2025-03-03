@@ -14,7 +14,7 @@ from quieromudarme.logging import setup_logger
 from quieromudarme.providers import HousingPost, ProviderName, get_provider_by_name
 
 if TYPE_CHECKING:
-    from quieromudarme.chatbot.types import TelegramID
+    from quieromudarme.chatbot.base import TelegramID
 
 logger = setup_logger()
 

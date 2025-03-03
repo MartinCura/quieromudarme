@@ -19,8 +19,8 @@ from quieromudarme import db
 from quieromudarme.errors import QMError
 from quieromudarme.logging import setup_logger
 
+from .base import Currency, HousingPost, ProviderName
 from .common import gen_user_agent
-from .types import Currency, HousingPost, ProviderName
 
 DEFAULT_MAX_PAGES: Final = 20
 RESULTS_PER_PAGE: Final = 20

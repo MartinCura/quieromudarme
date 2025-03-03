@@ -17,8 +17,8 @@ from quieromudarme import db
 from quieromudarme.logging import setup_logger
 from quieromudarme.utils import run_async_in_thread
 
+from .base import Currency, HousingPost, ProviderName
 from .common import gen_user_agent
-from .types import Currency, HousingPost, ProviderName
 
 logger = setup_logger()
 

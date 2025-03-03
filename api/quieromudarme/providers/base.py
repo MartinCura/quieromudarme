@@ -14,6 +14,7 @@ class ProviderName(enum.StrEnum):
     ZONAPROP = "ZonaProp"
     MERCADOLIBRE = "MercadoLibre"
     AIRBNB = "Airbnb"
+    BLUEGROUND = "Blueground"
 
 
 class Currency(enum.StrEnum):

@@ -26,7 +26,7 @@ from quieromudarme.providers.common import gen_user_agent
 from quieromudarme.settings import cfg
 from quieromudarme.utils import batched, run_async_in_thread
 
-from .types import Currency, HousingPost, ProviderName
+from .base import Currency, HousingPost, ProviderName
 
 logger = setup_logger()
 
