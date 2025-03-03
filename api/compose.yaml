@@ -40,10 +40,10 @@ x-airflow-common: &airflow-common
     build:
         context: .
         dockerfile: ./docker/airflow.dockerfile
-        # target: ${ENV:-dev}
-        target: dev
+        target: ${ENV:-dev}
     # TODO: don't like this, not the recommended approach, but gave up on fixing it... fix it.
     user: "1000:0"
+    restart: unless-stopped
     volumes:
         - edgedb-config:/home/airflow/.config/edgedb
         - ./quieromudarme/etl/dags:/opt/airflow/dags
@@ -51,6 +51,18 @@ x-airflow-common: &airflow-common
         - ./quieromudarme/etl/config:/opt/airflow/config
         - ./quieromudarme/etl/plugins:/opt/airflow/plugins
         - ./quieromudarme:/app/quieromudarme
+    develop:
+        watch:
+            - action: sync
+              path: quieromudarme/etl/dags
+              target: /opt/airflow/dags
+            - action: sync
+              path: quieromudarme
+              target: /app/quieromudarme
+            - action: rebuild
+              path: ./pyproject.toml
+            - action: rebuild
+              path: ./uv.lock
     env_file:
         - .env
     environment: &airflow-common-env
@@ -147,7 +159,6 @@ services:
     airflow-scheduler:
         <<: *airflow-common
         command: scheduler
-        restart: unless-stopped
         shm_size: 3g
         depends_on:
             postgres:
@@ -164,7 +175,6 @@ services:
     airflow-webserver:
         <<: *airflow-common
         command: webserver
-        restart: unless-stopped
         ports:
             - "8080:8080"
         depends_on:

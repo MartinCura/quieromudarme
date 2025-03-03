@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from bs4 import Tag as Bs4Tag
 
 from quieromudarme import db
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 from quieromudarme.utils import run_async_in_thread
 
 from .base import Currency, HousingPost, ProviderName

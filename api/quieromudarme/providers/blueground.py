@@ -13,7 +13,7 @@ import pydantic as pc
 import tenacity
 
 from quieromudarme import db
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 from quieromudarme.providers.base import Currency, HousingPost, ProviderName
 from quieromudarme.providers.common import gen_user_agent
 from quieromudarme.utils import run_async_in_thread
@@ -23,9 +23,11 @@ logger = setup_logger()
 
 BASE_URL: Final = "https://www.theblueground.com/pt-br/"
 MAX_PAGE_SIZE: Final = 50
+DEFAULT_MAX_PAGES: Final = 20
 
 
 name: Final = ProviderName.BLUEGROUND
+max_results_considered: Final = MAX_PAGE_SIZE * DEFAULT_MAX_PAGES
 
 
 class BluegroundHousingPost(HousingPost):
@@ -177,7 +179,7 @@ async def _gather_async_pages(url: str, pages: list[int]) -> list[BluegroundSear
 
 
 def get_search_results(
-    url: str, payload: dict[str, Any] | None, *, max_pages: int | None = None
+    url: str, payload: dict[str, Any] | None, *, max_pages: int | None = DEFAULT_MAX_PAGES
 ) -> tuple[int, list[HousingPost]]:
     """Get results for Blueground search URL."""
     del payload  # unused

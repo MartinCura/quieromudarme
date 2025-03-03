@@ -39,7 +39,7 @@ COPY quieromudarme /app/quieromudarme
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --group dev
 
-USER app
+# USER app
 CMD ["uv", "run", "watchfiles", "--filter", "python", "'chatbot'", "quieromudarme/"]
 
 
@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     uv pip install ./dist/quieromudarme-*.whl
 
-USER app
+# USER app
 CMD ["uv", "run", "--no-sync", "chatbot"]
 
 # TODO: do a .dockerignore with allowlist

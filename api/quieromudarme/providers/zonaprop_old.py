@@ -50,7 +50,7 @@ from bs4 import Tag as Bs4Tag
 
 from quieromudarme import db
 from quieromudarme.errors import QMError
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 from quieromudarme.providers.common import gen_user_agent
 from quieromudarme.utils import slugify
 

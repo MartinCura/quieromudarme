@@ -15,7 +15,7 @@ from seleniumbase import SB
 
 from quieromudarme import db
 from quieromudarme.errors import QMError
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 
 from .base import Currency, HousingPost, ProviderName
 from .common import gen_user_agent

@@ -23,7 +23,7 @@ def setup_logger(
     level: int = logging.DEBUG if DEBUG else logging.INFO,
 ) -> logging.Logger:
     """Sets up a logger with the given name, log filename, and level."""
-    global logged_initial
+    global logged_initial  # noqa: PLW0603 (it's not the end of the world for this)
     logger = logging.getLogger(name)
     logger.setLevel(level)
 

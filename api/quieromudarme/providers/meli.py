@@ -21,7 +21,7 @@ from bs4 import Tag as Bs4Tag
 
 from quieromudarme import db
 from quieromudarme.errors import QMError
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 from quieromudarme.providers.common import gen_user_agent
 from quieromudarme.settings import cfg
 from quieromudarme.utils import batched, run_async_in_thread

@@ -10,7 +10,7 @@ import edgedb
 
 from quieromudarme import db
 from quieromudarme.errors import QMError
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 from quieromudarme.providers import HousingPost, ProviderName, get_provider_by_name
 
 if TYPE_CHECKING:

@@ -10,12 +10,12 @@ from quieromudarme import db
 
 from .chatbot import bot as chatbot
 from .constants import MAX_NOTIFS_IN_UPDATE_PER_USER
-from .logging import setup_logger
+from .log import setup_logger
 
 logger = setup_logger()
 
 
-async def notify_new_revisions(tg_client: tg.TelegramClient | None = None) -> None:
+async def notify_revised(tg_client: tg.TelegramClient | None = None) -> None:
     """For each user, notify all updates to their watched housing."""
     db_client = edgedb.create_async_client()
     if tg_client is None:
@@ -72,9 +72,9 @@ async def notify_new_revisions(tg_client: tg.TelegramClient | None = None) -> No
     logger.info("Finished notifying updated revisions")
 
 
-def notify_new_revisions_sync() -> None:
-    """Sync version of notify_new_revisions."""
-    asyncio.run(notify_new_revisions())
+def notify_revised_sync() -> None:
+    """Sync version of notify_revised."""
+    asyncio.run(notify_revised())
 
 
 async def notify_new_housing(tg_client: tg.TelegramClient | None = None) -> None:
@@ -104,7 +104,8 @@ async def notify_new_housing(tg_client: tg.TelegramClient | None = None) -> None
             f" will get {len(watches)} notifications."
         )
 
-        big_search_warning = len(watches) >= 50
+        magic_number = 50
+        big_search_warning = len(watches) >= magic_number
         if len(watches) > MAX_NOTIFS_IN_UPDATE_PER_USER:
             logger.error(
                 f"User {user.telegram_username} ({user.telegram_id}) has {len(watches)} new"

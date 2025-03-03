@@ -9,12 +9,11 @@ from typing import Final
 import edgedb
 import telethon as tg
 import telethon.tl.custom as tg_custom
-import tenacity
 
 from quieromudarme import constants as const
 from quieromudarme import db
 from quieromudarme.etl import store_housing_posts
-from quieromudarme.logging import setup_logger
+from quieromudarme.log import setup_logger
 from quieromudarme.providers import ProviderName, clean_search_url, get_provider_by_url
 from quieromudarme.settings import cfg
 
