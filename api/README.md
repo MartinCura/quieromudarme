@@ -1,8 +1,8 @@
 # QuieroMudarme API
 
 ```bash
-poetry run python -m edgedb.codegen --dir ./quieromudarme/db/ --file ./quieromudarme/db/__init__.py
-poetry run ruff format ./quieromudarme/db/__init__.py
+uv run python -m edgedb.codegen --dir ./quieromudarme/db/ --file ./quieromudarme/db/__init__.py
+uv run ruff format ./quieromudarme/db/__init__.py
 ```
 
 To link the host EdgeDB CLI with the instance running as a docker service:

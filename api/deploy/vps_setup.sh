@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # ec2_setup.sh
 #
-# To be run manually on a fresh EC2 instance with Ubuntu 22.04.
+# To be run manually on a fresh ~EC2~ instance with Ubuntu 22.04.
 # Installs Docker, Docker Compose, and sets up the environment for the app.
 set -euo pipefail
 IFS=$'\n\t'
+
+# Run manually
+exit 1
 
 # If in DonWeb or another with only root access by default, create a user
 adduser ubuntu
@@ -54,7 +57,7 @@ commandTemplates:
   dockerCompose: docker compose
 EOF
 
-mkdir -p /home/ubuntu/apps/quieromudarme
+mkdir -p /home/ubuntu/apps/quieromudarme/
 
 # Reboot just in case
 sudo reboot

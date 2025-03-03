@@ -39,18 +39,18 @@ name: quieromudarme
 x-airflow-common: &airflow-common
     build:
         context: .
-        dockerfile: qm_airflow/Dockerfile
+        dockerfile: ./docker/airflow.dockerfile
         # target: ${ENV:-dev}
         target: dev
     # TODO: don't like this, not the recommended approach, but gave up on fixing it... fix it.
     user: "1000:0"
     volumes:
         - edgedb-config:/home/airflow/.config/edgedb
-        - ./qm_airflow/dags:/opt/airflow/dags
-        - ./qm_airflow/logs:/opt/airflow/logs
-        - ./qm_airflow/config:/opt/airflow/config
-        - ./qm_airflow/plugins:/opt/airflow/plugins
-        - ./quieromudarme:/opt/app/quieromudarme
+        - ./quieromudarme/etl/dags:/opt/airflow/dags
+        - ./quieromudarme/etl/logs:/opt/airflow/logs
+        - ./quieromudarme/etl/config:/opt/airflow/config
+        - ./quieromudarme/etl/plugins:/opt/airflow/plugins
+        - ./quieromudarme:/app/quieromudarme
     env_file:
         - .env
     environment: &airflow-common-env
@@ -64,7 +64,7 @@ x-airflow-common: &airflow-common
         AIRFLOW__CORE__LOAD_EXAMPLES: "false"
         AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
         AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
-        PYTHONPATH: /opt/app
+        PYTHONPATH: /app
         EDGEDB_INSTANCE: db
 
 services:
@@ -106,17 +106,17 @@ services:
     chatbot:
         build:
             context: .
-            dockerfile: ./Dockerfile
+            dockerfile: ./docker/chatbot.dockerfile
             target: ${ENV:-dev}
         restart: unless-stopped
         volumes:
             - edgedb-config:/root/.config/edgedb
-            - ./edgedb.toml:/opt/app/edgedb.toml
-            - ./dbschema:/opt/app/dbschema
-            - ./poetry.lock:/opt/app/poetry.lock
-            - ./pyproject.toml:/opt/app/pyproject.toml
-            - ./quieromudarme:/opt/app/quieromudarme
-            - ./logs:/opt/app/logs
+            - ./edgedb.toml:/app/edgedb.toml
+            - ./dbschema:/app/dbschema
+            - ./uv.lock:/app/uv.lock
+            - ./pyproject.toml:/app/pyproject.toml
+            - ./quieromudarme:/app/quieromudarme
+            - ./logs:/app/logs
             # TODO: add /static
         env_file:
             - .env
@@ -183,7 +183,7 @@ services:
           - init
         user: "0:0"
         volumes:
-            - ./qm_airflow:/sources
+            - ./quieromudarme/etl:/sources
         environment:
             <<: *airflow-common-env
             _AIRFLOW_DB_MIGRATE: "true"

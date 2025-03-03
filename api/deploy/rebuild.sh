@@ -7,8 +7,7 @@ IFS=$'\n\t'
 
 cd /home/ubuntu/apps/quieromudarme/
 
-# sudo
-rm -rf dist/ dbschema/ static/  # qm_airflow/dags/
+rm -rf dist/ dbschema/ static/  # quieromudarme/etl/{dags,plugins}/
 tar -xzf quieromudarme.tar.gz
 mv .env.production .env
 
