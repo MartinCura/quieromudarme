@@ -12,25 +12,27 @@ IFS=$'\n\t'
 #   --instance-ids ${ec2_instance_id} --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
 vps_ip="149.50.137.147"
 vps_port="5348"
-echo "EC2 instance IP: ${vps_ip}, port: ${vps_port}\n"
+ssh_key_path="~/.ssh/id_vps_qm.pub"
+echo "VPS instance IP: ${vps_ip}, port: ${vps_port}, SSH key path: ${ssh_key_path}\n"
 
 rm -rf ./dist/*
 uv build
 
 # Create a tarball of the app
-tar -czf dist/quieromudarme.tar.gz \
+tar -czf quieromudarme.tar.gz \
   --exclude='**/logs' --exclude='**/__pycache__' \
-  dist/ static/ dbschema/ quieromudarme/etl/ \
+  deploy/ dist/ static/ dbschema/ quieromudarme/etl/ \
   .env.production pyproject.toml uv.lock \
   docker/ compose.yaml \
   quieromudarme/ README.md
 # TODO: temporarily simply uploading all python code
 
-# Upload to the EC2 instance
-scp -i ~/.ssh/quieromudarme-kp.pem -P ${vps_port} ./dist/quieromudarme.tar.gz "ubuntu@${vps_ip}:/home/ubuntu/apps/quieromudarme/"
+# Upload to the VPS instance
+scp -i ${ssh_key_path} -P ${vps_port} quieromudarme.tar.gz "ubuntu@${vps_ip}:/home/ubuntu/apps/quieromudarme/"
 
-# Extract the tarball and set up the app on the EC2 instance
-ssh -i ~/.ssh/quieromudarme-kp.pem -p ${vps_port} "ubuntu@${vps_ip}" 'bash -s' < ./deploy/rebuild.sh
+# Extract the tarball and set up the app on the VPS instance
+ssh -i ${ssh_key_path} -p ${vps_port} "ubuntu@${vps_ip}" 'bash -s' < ./deploy/rebuild.sh
 
+rm quieromudarme.tar.gz
 echo
 echo "Done!"

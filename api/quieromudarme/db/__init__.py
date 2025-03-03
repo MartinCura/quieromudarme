@@ -11,7 +11,7 @@
 #     'quieromudarme/db/upsert_user.edgeql'
 #     'quieromudarme/db/upsert_watches_for_search.edgeql'
 # WITH:
-#     $ python -m edgedb.codegen --dir ./quieromudarme/db/ --file ./quieromudarme/db/__init__.py
+#     $ python3 -m edgedb.codegen --dir ./quieromudarme/db/ --file ./quieromudarme/db/__init__.py
 
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ class NoPydanticValidation:
         # Pydantic 1.x
         from pydantic.dataclasses import dataclass as pydantic_dataclass
 
-        pydantic_dataclass(cls)
+        _ = pydantic_dataclass(cls)
         cls.__pydantic_model__.__get_validators__ = lambda: []
         return []
 
@@ -454,7 +454,7 @@ async def insert_housing_search(
     user_id: uuid.UUID,
     provider: str,
     search_url: str,
-    query_payload: str | None,
+    query_payload: str | None = None,
 ) -> InsertHousingSearchResult:
     return await executor.query_single(
         """\
@@ -603,7 +603,7 @@ async def upsert_housing_from_search(
 
 
 async def upsert_user(
-    executor: edgedb.AsyncIOExecutor, *, telegram_id: int, telegram_username: str | None
+    executor: edgedb.AsyncIOExecutor, *, telegram_id: int, telegram_username: str | None = None
 ) -> UpsertUserResult | None:
     return await executor.query_single(
         """\
@@ -649,7 +649,7 @@ async def upsert_watches_for_search(
     housing_search_id: uuid.UUID,
     housing_ids: list[uuid.UUID],
     refreshed_at: datetime.datetime,
-    as_notified: bool | None,
+    as_notified: bool | None = None,
 ) -> list[UpdateNotifiedHousingWatchesResult]:
     return await executor.query(
         """\

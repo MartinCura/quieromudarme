@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ec2_setup.sh
+# vps_setup.sh
 #
 # To be run manually on a fresh ~EC2~ instance with Ubuntu 22.04.
 # Installs Docker, Docker Compose, and sets up the environment for the app.
