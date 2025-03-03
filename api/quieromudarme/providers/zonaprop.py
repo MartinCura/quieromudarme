@@ -1,6 +1,5 @@
 """ZonaProp connector."""
 
-import logging
 import os
 import random
 import re
@@ -10,7 +9,6 @@ from typing import Any, Final, cast
 
 import py_mini_racer
 import pydantic as pc
-import tenacity
 from bs4 import BeautifulSoup
 from bs4 import Tag as Bs4Tag
 from seleniumbase import SB
@@ -79,7 +77,7 @@ class ZonaPropHousingPost(HousingPost):
     modified_at: pc.AwareDatetime = pc.Field(validation_alias="modified_date")
     publisher_id: str = pc.Field(validation_alias=pc.AliasPath("publisher", "publisherId"))
 
-    @pc.computed_field  # type: ignore [misc]
+    @pc.computed_field  # type: ignore [prop-decorator]
     @property
     def address(self) -> str:
         """Full address from location elements."""
@@ -176,11 +174,6 @@ def is_valid_search_url(url: str) -> bool:
     return bool(re.match(r"https?://(www\.)?zonaprop\.com\.ar/[a-zA-Z0-9-]+\.html", url))
 
 
-@tenacity.retry(
-    wait=tenacity.wait_exponential(multiplier=1, min=5, max=15),
-    stop=tenacity.stop_after_attempt(3),
-    before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
-)
 def get_search_results(
     url: str, payload: dict[str, Any] | None, *, max_pages: int | None = DEFAULT_MAX_PAGES
 ) -> tuple[int, list[HousingPost]]:

@@ -82,10 +82,17 @@ class BluegroundHousingPost(HousingPost):
         """Get picture URLs from Blueground's JSON."""
         return [pic["url"] for pic in v]
 
-    @pc.field_serializer("check_in_date", "check_out_date", when_used="unless-none")
+    @pc.field_serializer(
+        "check_in_date", "check_out_date", "available_from", when_used="unless-none"
+    )
     def serialize_dates(self, v: date) -> str:
         """Serialize dates as ISO string."""
         return v.isoformat()
+
+    @pc.field_serializer("base_rent", when_used="unless-none")
+    def serialize_base_rent(self, v: Decimal) -> float:
+        """Serialize base rent as float."""
+        return float(v)
 
 
 class BluegroundSearchResult(pc.BaseModel):

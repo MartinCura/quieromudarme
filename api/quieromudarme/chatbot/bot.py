@@ -301,10 +301,7 @@ async def create_search(
 
     now = datetime.now(tz=UTC)
     try:
-        get_search_results = provider.get_search_results.retry_with(  # type: ignore [attr-defined]
-            stop=tenacity.stop_after_attempt(1)
-        )
-        total_results, posts = get_search_results(search_url, parsed_payload)
+        total_results, posts = provider.get_search_results(search_url, parsed_payload)
         # TODO: only get number of results then async get the posts and store them
     except Exception:
         logger.exception("Error getting search results. Continuing anyway.")
