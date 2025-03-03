@@ -1,8 +1,8 @@
 **/tmp/
 **/bot*.session*
 
-api/qm_airflow/logs/
-!api/qm_airflow/logs/.gitkeep
+api/quieromudarme/etl/logs/
+!api/quieromudarme/etl/logs/.gitkeep
 
 api/deploy/*.tar.gz
 

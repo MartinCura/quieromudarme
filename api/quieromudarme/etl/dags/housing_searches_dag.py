@@ -5,18 +5,16 @@ import os
 from datetime import UTC, datetime, timedelta
 
 from airflow.decorators import dag, task
-from airflow.models import DagRun
 from airflow.utils.context import Context
 from airflow.utils.trigger_rule import TriggerRule
 
 PYTHON_BIN = os.getenv("APP_PYTHON_BIN", "./.venv/bin/python")
 
-logger = logging.getLogger("airflow.task")
-logger.setLevel(logging.DEBUG)
-
 
 def handle_failure(_context: Context) -> None:
     """Send a message to the admin about an error in the DAG."""
+    logger = logging.getLogger("airflow.task")
+    logger.setLevel(logging.DEBUG)
     # logger.debug("Handling failure, notifying admin.")
     # dag_info = context.get("dag")
     # run_async_in_thread(
@@ -41,17 +39,24 @@ default_op_args = {
 
 
 @task.external_python(python=PYTHON_BIN)
-def etl_all_searches(dag_run: DagRun | None = None) -> None:
+def etl_searches() -> None:
     """Run all housing searches."""
+    import logging
+    from datetime import timedelta
+
     from quieromudarme import etl
 
+    logger = logging.getLogger("airflow.task")
+    logger.setLevel(logging.DEBUG)
     logger.info("======\n\n\nStarting ETL.")
     # TODO: should it only get properties where
     #       [data_interval_start <=] modified_date <= data_interval_end ?
     #       in this case i should revisit the `catchup` DAG parameter
-    is_manual_run = bool(dag_run.external_trigger if dag_run else False)
-    logger.debug("Is manual run: %s", is_manual_run)
-    start_delta = None if is_manual_run else timedelta(minutes=90)
+    # TODO: change this for a param, clearer and more flexible
+    # is_manual_run = bool(dag_run.external_trigger if dag_run else False)
+    # logger.debug("Is manual run: %s", is_manual_run)
+    # start_delta = None if is_manual_run else timedelta(minutes=90)
+    start_delta = timedelta(minutes=90)
 
     etl.etl_housing_for_all_searches_sync(start_delta=start_delta)
     logger.info("Finished ETL.\n\n\n======")
@@ -60,8 +65,12 @@ def etl_all_searches(dag_run: DagRun | None = None) -> None:
 @task.external_python(python=PYTHON_BIN, trigger_rule=TriggerRule.ALL_DONE)
 def notify_revised_housing() -> None:
     """Notify users about new revisions."""
+    import logging
+
     from quieromudarme import notifier
 
+    logger = logging.getLogger("airflow.task")
+    logger.setLevel(logging.DEBUG)
     logger.info("======\n\n\nStarting new revisions notifier.")
     notifier.notify_revised_sync()
     logger.info("Finished new revisions notifier.\n\n\n======")
@@ -70,8 +79,12 @@ def notify_revised_housing() -> None:
 @task.external_python(python=PYTHON_BIN, trigger_rule=TriggerRule.ALL_DONE)
 def notify_new_housing() -> None:
     """Notify users about new housing."""
+    import logging
+
     from quieromudarme import notifier
 
+    logger = logging.getLogger("airflow.task")
+    logger.setLevel(logging.DEBUG)
     logger.info("======\n\n\nStarting new housing notifier.")
     notifier.notify_new_housing_sync()
     logger.info("Finished new housing notifier.\n\n\n======")
@@ -86,11 +99,11 @@ def notify_new_housing() -> None:
 )
 def housing_searches_dag() -> None:
     """DAG to look for new housings for each housing search and notify them."""
-    etl_task = etl_all_searches()
+    etl_searches_task = etl_searches()
     notify_revised_task = notify_revised_housing()
     notify_new_task = notify_new_housing()
 
-    etl_task >> notify_revised_task >> notify_new_task
+    etl_searches_task >> notify_revised_task >> notify_new_task
 
 
 housing_searches_dag_ = housing_searches_dag()
