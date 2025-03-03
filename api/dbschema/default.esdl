@@ -5,9 +5,8 @@ module default {
 
   scalar type Currency extending enum<ARS, USD, EUR>;
   scalar type UserTier extending enum<Free, Premium>;
-  # scalar type Provider extending enum<ZonaProp, MercadoLibre, Airbnb, Argenprop>;
   scalar type Provider extending str {
-    constraint one_of ('ZonaProp', 'MercadoLibre', 'Airbnb');
+    constraint one_of ('ZonaProp', 'MercadoLibre', 'Airbnb', 'Blueground');
   }
 
   abstract type Timestamped {
@@ -28,26 +27,6 @@ module default {
         errmessage := "Cannot be deleted"
       };
   }
-
-  # TODO: couldn't make this work properly and elegantly
-  # abstract type SoftDeletable {
-  #   deleted_at: datetime;
-
-  #   required deleted := (.deleted_at ?!= <datetime>{});
-
-  #   access policy softdeletable__default_access
-  #     allow select, insert, update
-  #     using (not .deleted) {
-  #       errmessage := "Cannot access or write soft-deleted rows"
-  #     }
-  #   access policy soft_delete
-  #     allow update write
-  #     using (.deleted);
-  #   access policy hard_delete
-  #     deny delete {
-  #       errmessage := "Cannot hard delete"
-  #     };
-  # }
 
   abstract type Immutable {
     access policy immutable__default_access
@@ -73,7 +52,7 @@ module default {
     multi searches := (.<user[is HousingSearch]);
   }
 
-  type HousingSearch extending Timestamped { #, SoftDeletable {
+  type HousingSearch extending Timestamped {
     required user: User;
     required provider: Provider;
     required url: str;
@@ -141,13 +120,6 @@ module default {
     index on (.notified) {
       annotation description := "Indexing notified or not.";
     }
-    # access policy default_access
-    #   allow all;
-    # access policy hide_if_softdeleted_search
-    #   deny all
-    #   using (.search.deleted) {
-    #     errmessage := "Cannot access if its search was soft-deleted"
-    #   };
     trigger exclusive_housing_for_user after insert, update for all do (
       assert(
         not exists (

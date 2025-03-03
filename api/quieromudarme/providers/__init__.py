@@ -1,8 +1,8 @@
 """Providers module."""
 
-from . import airbnb, meli, zonaprop
+from . import airbnb, blueground, meli, zonaprop
+from .base import HousingPost, ProviderName
 from .protocol import ProviderConnector
-from .types import HousingPost, ProviderName
 
 
 def get_provider_by_name(name: ProviderName) -> ProviderConnector:
@@ -13,6 +13,8 @@ def get_provider_by_name(name: ProviderName) -> ProviderConnector:
         return meli
     if name == ProviderName.AIRBNB:
         return airbnb
+    if name == ProviderName.BLUEGROUND:
+        return blueground
     msg = f"Unknown provider name: {name}"
     raise ValueError(msg)
 
@@ -25,6 +27,8 @@ def get_provider_by_url(url: str) -> ProviderConnector | None:
         return meli
     if airbnb.is_valid_search_url(url):
         return airbnb
+    if blueground.is_valid_search_url(url):
+        return blueground
     return None
 
 
@@ -33,7 +37,7 @@ def clean_search_url(url: str) -> str:
 
     If new providers are added that depend on these parts of the URL, revisit this.
 
-    Example: should not be used for Airbnb.
+    Example: should not be used for Airbnb or Blueground.
     """
     return url.split("?")[0].split("#")[0]
 
@@ -43,6 +47,7 @@ __all__ = [
     "ProviderConnector",
     "ProviderName",
     "airbnb",
+    "blueground",
     "clean_search_url",
     "get_provider_by_name",
     "get_provider_by_url",
