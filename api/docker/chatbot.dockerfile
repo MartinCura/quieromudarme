@@ -1,7 +1,8 @@
 FROM python:3.12-slim AS base
 COPY --from=ghcr.io/astral-sh/uv:0.6.3 /uv /uvx /bin/
 ENV UV_SYSTEM_PYTHON=1 \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    PYTHONPATH=/app
 WORKDIR /app
 
 RUN adduser --system app

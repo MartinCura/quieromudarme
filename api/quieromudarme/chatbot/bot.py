@@ -1,10 +1,12 @@
 """Telegram bot."""
 
 import asyncio
+import functools
 import re
 import urllib.parse
+from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
-from typing import Final
+from typing import Any, Final
 
 import edgedb
 import telethon as tg
@@ -47,7 +49,7 @@ async def create_tg_client_async(*, start: bool = False) -> tg.TelegramClient:
 
 
 async def alert_admin(message: str, client: tg.TelegramClient | None = None) -> None:
-    """Send a message to the admin about an error in the DAG."""
+    """Send a message to the admin about an error."""
     if client is None:
         client = await create_tg_client_async(start=True)
 
@@ -254,7 +256,7 @@ def can_user_create_search(user: db.UpsertUserResult) -> bool:
     return user.tier.value != db.UserTier.FREE.value or len(user.searches) < const.MAX_FREE_SEARCHES
 
 
-async def create_search(
+async def create_search(  # noqa: C901
     event: tg.events.NewMessage.Event, user: db.UpsertUserResult, search_url: str
 ) -> None:
     """Create a new housing search for the user based on their input."""
@@ -434,16 +436,43 @@ async def process_feedback(
 #########
 
 
-async def run_async() -> None:
+async def run_async() -> None:  # noqa: C901, PLR0915
     """Start the chatbot: listen and respond to messages."""
     logger.info("Starting bot...")
     bot = await create_tg_client_async(start=True)
+
+    def handle_errors(
+        func: Callable[[tg.events.NewMessage.Event], Coroutine[Any, Any, None]],
+    ) -> Callable[[tg.events.NewMessage.Event], Coroutine[Any, Any, None]]:
+        """Decorator to catch errors, send responses, and notify admin."""
+
+        @functools.wraps(func)
+        async def wrapper(event: tg.events.NewMessage.Event) -> None:
+            try:
+                await func(event)
+            except Exception as e:
+                admin_msg = f"Error en {func.__name__}: {e!s}\n\n"
+                admin_msg += f"Usuario: {event.chat_id}\n"
+                admin_msg += f"Mensaje: {event.message.message}\n\n"
+                logger.exception(f"Error in handler {func.__name__}")
+                try:
+                    await alert_admin(admin_msg, bot)
+                    await event.reply(
+                        "Upa, tengo algún cable suelto, no pude procesar ese mensaje. "
+                        "(Ya notifiqué al admin para que investigue el problema.)"
+                    )
+                except Exception:
+                    logger.exception("Failed to send error notification")
+                raise
+
+        return wrapper
 
     @bot.on(
         tg.events.NewMessage(
             pattern=r"(?i)/?(start|help|empezar|ayuda|hola|holis)\s*$", incoming=True
         )
     )  # type: ignore [misc]
+    @handle_errors
     async def help_handler(event: tg.events.NewMessage.Event) -> None:
         """Send explanation of what the bot does and how to use it."""
         await log_event(event)
@@ -458,6 +487,7 @@ async def run_async() -> None:
         conversation_states[event.chat_id].status = ConversationStatus.IDLE
 
     @bot.on(tg.events.NewMessage(pattern=r"(?i)/(crear|nuevo|nueva|new)", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def create_housing_search_handler(event: tg.events.NewMessage.Event) -> None:
         """Create new housing search for this user."""
         await log_event(event)
@@ -490,6 +520,7 @@ async def run_async() -> None:
         return await create_search(event, user, search_url=args[1].strip())
 
     @bot.on(tg.events.NewMessage(pattern=r"(?i)/(listar|list|busquedas)", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def list_housing_searches_handler(event: tg.events.NewMessage.Event) -> None:
         """List all housing searches for this user."""
         await log_event(event)
@@ -500,6 +531,7 @@ async def run_async() -> None:
         conversation_states[user.telegram_id].status = ConversationStatus.IDLE
 
     @bot.on(tg.events.NewMessage(pattern=r"(?i)/(borrar|eliminar|delete)", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def delete_housing_search_handler(event: tg.events.NewMessage.Event) -> None:
         """Delete a housing search for this user."""
         await log_event(event)
@@ -528,6 +560,7 @@ async def run_async() -> None:
         conversation_states[user.telegram_id].status = ConversationStatus.DELETING_SEARCH
 
     @bot.on(tg.events.NewMessage(pattern=r"(?i)/(sugerencia(s)?|feedback)", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def feedback_handler(event: tg.events.NewMessage.Event) -> None:
         """Send feedback to the bot admin."""
         await log_event(event)
@@ -549,6 +582,7 @@ async def run_async() -> None:
         conversation_states[user.telegram_id].status = ConversationStatus.IDLE
 
     @bot.on(tg.events.NewMessage(pattern=r"(?i)/?(cancelar)", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def cancel_handler(event: tg.events.NewMessage.Event) -> None:
         """Cancel any ongoing conversation status."""
         await log_event(event)
@@ -557,6 +591,7 @@ async def run_async() -> None:
         await event.reply("Operación cancelada.")
 
     @bot.on(tg.events.NewMessage(pattern=r"^\s*https?://", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def url_handler(event: tg.events.NewMessage.Event) -> None:
         """Identify if this is a provider URL and assume the user wants to create a search."""
         await log_event(event)
@@ -572,6 +607,7 @@ async def run_async() -> None:
     ## Admin commands
 
     @bot.on(tg.events.NewMessage(pattern=r"^!create \d+ https", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def admin_create_housing_search_for_user_handler(
         event: tg.events.NewMessage.Event,
     ) -> None:
@@ -587,7 +623,7 @@ async def run_async() -> None:
         db_client = edgedb.create_async_client()
         user = await db.upsert_user(db_client, telegram_id=int(user_tg_id), telegram_username=None)
         if not user:
-            msg = "User upsert somehow failed!!"
+            msg = "User upsert somehow failed!"
             raise RuntimeError(msg)
         if not can_user_create_search(user):
             await event.reply(
@@ -599,6 +635,7 @@ async def run_async() -> None:
         return await create_search(event, user, search_url=url)
 
     @bot.on(tg.events.NewMessage(pattern=r"^\s*[^/!]", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def default_handler(event: tg.events.NewMessage.Event) -> None:
         """Catch all messages not starting on a command, respond based on current user state.
 
@@ -620,6 +657,7 @@ async def run_async() -> None:
                 return await process_feedback(bot, event, user, message=message)
 
     @bot.on(tg.events.NewMessage(pattern=r"!ping", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def ping_handler(event: tg.events.NewMessage.Event) -> None:
         """Respond "!pong" whenever someone sends "!ping", then delete both messages."""
         m = await event.respond("!pong")
@@ -632,6 +670,7 @@ async def run_async() -> None:
         await m.delete()
 
     @bot.on(tg.events.NewMessage(pattern=r"^!announce ", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def announcement_handler(event: tg.events.NewMessage.Event) -> None:
         """Send an announcement to all users. Admin-only."""
         await log_event(event)
@@ -659,6 +698,7 @@ async def run_async() -> None:
         await event.reply("✅ Mensaje enviado a todos los usuarios.")
 
     @bot.on(tg.events.NewMessage(pattern=r"^!message \d+", incoming=True))  # type: ignore [misc]
+    @handle_errors
     async def admin_message_handler(event: tg.events.NewMessage.Event) -> None:
         """Send an admin message to a particular user. Admin-only.
 

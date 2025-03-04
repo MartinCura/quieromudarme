@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from decimal import Decimal
 from http import HTTPStatus
+from itertools import batched
 from typing import Any, Final, cast
 
 import niquests
@@ -24,7 +25,7 @@ from quieromudarme.errors import QMError
 from quieromudarme.log import setup_logger
 from quieromudarme.providers.common import gen_user_agent
 from quieromudarme.settings import cfg
-from quieromudarme.utils import batched, run_async_in_thread
+from quieromudarme.utils import run_async_in_thread
 
 from .base import Currency, HousingPost, ProviderName
 
