@@ -1,6 +1,6 @@
 [project]
 name = "quieromudarme"
-version = "0.4.1"
+version = "0.5.0"
 description = "Monitor housing posts across platforms and get alerts when prices go down."
 authors = [{ name = "Martín Cura", email = "code@tincho.dev" }]
 readme = "README.md"

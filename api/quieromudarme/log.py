@@ -12,6 +12,7 @@ from quieromudarme import __version__
 load_dotenv()
 
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+# TODO: clean up Airflow mentions
 RUNNING_IN_AIRFLOW = os.getenv("AIRFLOW_HOME") is not None
 
 logged_initial: bool = False

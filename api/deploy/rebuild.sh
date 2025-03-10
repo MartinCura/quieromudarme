@@ -17,6 +17,6 @@ docker compose --profile init build
 # If it's the first time, make sure to run with `--profile init`, e.g. `docker compose --profile init up -d`
 
 echo "Restarting Docker containers..."
-docker compose --profile init up -d edgedb postgres edgedb-init airflow-init
-docker compose stop chatbot airflow-scheduler
+docker compose --profile init up -d edgedb postgres edgedb-init
+docker compose stop chatbot scheduler
 docker compose up -d

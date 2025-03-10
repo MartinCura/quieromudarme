@@ -1,6 +1,4 @@
 # For use in production
 
-default-groups = []
-
 [pip]
 compile-bytecode = true

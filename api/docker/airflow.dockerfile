@@ -61,12 +61,3 @@ COPY quieromudarme/pipelines/dags /opt/airflow/dags
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-default-groups --group etl
 WORKDIR /opt/airflow
-
-# TODO: clean up
-# COPY --chown=airflow:root ./pyproject.toml ./uv.lock ./README.md /app/
-# COPY --chown=airflow:root ./dist /app/dist
-# RUN --mount=type=cache,target=/home/airflow/.cache/pip,uid=50000,gid=0 \
-#     --mount=type=cache,target=/home/airflow/.cache/uv,uid=50000,gid=0 \
-#     cd /app && \
-#     source $HOME/.local/bin/activate && \
-#     PIP_USER=false uv pip install ./dist/quieromudarme-*.whl

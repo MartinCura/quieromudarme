@@ -45,9 +45,8 @@ CMD ["uv", "run", "watchfiles", "--filter", "python", "'scheduler'", "quieromuda
 FROM base AS prod
 ENV UV_COMPILE_BYTECODE=1
 
-COPY deploy/uv.toml /app/
+COPY README.md pyproject.toml uv.lock deploy/uv.toml /app/
 COPY dist/ /app/dist
-RUN --mount=type=cache,target=/root/.cache/uv \
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-default-groups --group etl && \
