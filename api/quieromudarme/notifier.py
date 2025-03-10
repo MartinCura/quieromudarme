@@ -31,11 +31,11 @@ async def notify_revised(tg_client: tg.TelegramClient | None = None) -> None:
 
     for updated_user_watch in updated_watches_per_user:
         await asyncio.sleep(2)  # time for the tg client to breathe
+        user = updated_user_watch.user
         # Act only on searches created at least 10 minutes ago, for some sanity
         watches = [
             watch for watch in updated_user_watch.watches if watch.search.created_at < ten_min_ago
         ]
-        user = updated_user_watch.user
         logger.info(
             "\n\\/----------------------------------------"
             f"\n[Notifier] User {user.telegram_username} ({user.telegram_id})"

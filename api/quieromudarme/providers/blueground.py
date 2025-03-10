@@ -6,7 +6,7 @@ import math
 import re
 from datetime import date
 from decimal import Decimal
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, Self
 
 import niquests
 import pydantic as pc
@@ -66,12 +66,6 @@ class BluegroundHousingPost(HousingPost):
     )
     available_from: date = pc.Field(validation_alias=pc.AliasPath("availableFrom"))
 
-    @pc.field_validator("url")
-    @classmethod
-    def validate_url(cls, v: str) -> str:
-        """Merge base URL with `path`."""
-        return f"{BASE_URL}{v}"
-
     @pc.computed_field  # type: ignore [prop-decorator]
     @property
     def url_with_dates(self) -> str:
@@ -83,6 +77,12 @@ class BluegroundHousingPost(HousingPost):
     def validate_picture_urls(cls, v: list[dict[str, str]]) -> list[str]:
         """Get picture URLs from Blueground's JSON."""
         return [pic["url"] for pic in v]
+
+    @pc.model_validator(mode="after")
+    def complete_url(self) -> Self:
+        """Replace the URL with a full version with dates."""
+        self.url = self.url_with_dates
+        return self
 
     @pc.field_serializer(
         "check_in_date", "check_out_date", "available_from", when_used="unless-none"
@@ -115,6 +115,7 @@ class BluegroundSearchResult(pc.BaseModel):
     )
 
 
+# TODO: unused
 @tenacity.retry(
     wait=tenacity.wait_exponential(multiplier=1, min=4, max=15),
     stop=tenacity.stop_after_attempt(3),
@@ -141,8 +142,6 @@ async def _fetch_page_async_html(url: str, *, page: int | None = None) -> Bluegr
         raise ValueError(msg)
 
     json_data: str = json_match.group(1).strip()
-    # with open("resp.json", "w") as f:
-    #     f.write(json.dumps(json.loads(json_data), indent=2))
     return BluegroundSearchResult.model_validate_json(json_data)
 
 
@@ -152,7 +151,7 @@ async def _fetch_page_async_html(url: str, *, page: int | None = None) -> Bluegr
     before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
 )
 async def _fetch_page_async(url: str, *, page: int | None = None) -> BluegroundSearchResult:
-    """Fetch a page of Blueground search results from JSON, async."""
+    """Fetch a page of Blueground search results from JSON REST API, async."""
     headers = {"User-Agent": gen_user_agent()}
     params = {"items": str(MAX_PAGE_SIZE), "offset": str((page or 0) * MAX_PAGE_SIZE)}
 
@@ -228,3 +227,6 @@ if __name__ == "__main__":
     posts = get_search_results(sys.argv[1], payload=None)[1]
     for post in posts:
         logger.info(post.model_dump_json(indent=2))
+
+
+# TODO: allow receiving HTML URL and convert it to API URL
