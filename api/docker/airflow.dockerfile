@@ -36,9 +36,9 @@ RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
-# RUN umask 0000 && \
-#     uv run --no-sync seleniumbase get chromedriver && \
-#     uv run --no-sync seleniumbase get uc_driver
+RUN umask 0000 && \
+    uvx seleniumbase get chromedriver && \
+    uvx seleniumbase get uc_driver
 
 
 FROM base AS dev

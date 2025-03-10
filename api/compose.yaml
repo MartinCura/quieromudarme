@@ -43,7 +43,6 @@ x-airflow-common: &airflow-common
         target: ${ENV:-dev}
     # TODO: don't like this, not the recommended approach, but gave up on fixing it... fix it.
     user: "1000:0"
-    restart: unless-stopped
     volumes:
         - edgedb-config:/home/airflow/.config/edgedb
         - ./quieromudarme/etl/dags:/opt/airflow/dags
@@ -159,6 +158,7 @@ services:
     airflow-scheduler:
         <<: *airflow-common
         command: scheduler
+        restart: unless-stopped
         shm_size: 3g
         depends_on:
             postgres:
@@ -175,6 +175,7 @@ services:
     airflow-webserver:
         <<: *airflow-common
         command: webserver
+        restart: unless-stopped
         ports:
             - "8080:8080"
         depends_on:
