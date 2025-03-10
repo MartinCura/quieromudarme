@@ -51,8 +51,8 @@ def setup_logger(
         logger.info(f"Running quieromudarme version {__version__}")
         if RUNNING_IN_AIRFLOW:
             logger.debug("Detected as running in Airflow.")
-        logger.debug(f"Logging to {log_filepath}")
-        logger.debug(f"Logging level set to {logging.getLevelName(level)}")
+        logger.info(f"Logging to {log_filepath}")
+        logger.info(f"Logging level set to {logging.getLevelName(level)}")
         logged_initial = True
 
     return logger

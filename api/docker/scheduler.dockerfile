@@ -22,8 +22,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY ./static/ /app/static
-
 RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=cache,target=/root/.cache/uv \
@@ -38,10 +36,10 @@ FROM base AS dev
 COPY pyproject.toml uv.lock README.md /app/
 COPY quieromudarme /app/quieromudarme
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-default-groups --group dev
+    uv sync --frozen --no-default-groups --group dev --group etl
 
 # TODO: USER app
-CMD ["uv", "run", "watchfiles", "--filter", "python", "'chatbot'", "quieromudarme/"]
+CMD ["uv", "run", "watchfiles", "--filter", "python", "'scheduler'", "quieromudarme/"]
 
 
 FROM base AS prod
@@ -49,11 +47,13 @@ ENV UV_COMPILE_BYTECODE=1
 
 COPY deploy/uv.toml /app/
 COPY dist/ /app/dist
+RUN --mount=type=cache,target=/root/.cache/uv \
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-default-groups --group etl && \
     uv pip install ./dist/quieromudarme-*.whl
 
 # TODO: USER app
-CMD ["uv", "run", "--no-sync", "chatbot"]
+CMD ["uv", "run", "--no-sync", "scheduler"]
 
 # TODO: do a .dockerignore with allowlist

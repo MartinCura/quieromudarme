@@ -21,7 +21,7 @@ uv build
 # Create a tarball of the app
 tar -czf quieromudarme.tar.gz \
   --exclude='**/logs' --exclude='**/__pycache__' \
-  deploy/ dist/ static/ dbschema/ quieromudarme/etl/ \
+  deploy/ dist/ static/ dbschema/ quieromudarme/pipelines/ \
   .env.production pyproject.toml uv.lock \
   docker/ compose.yaml \
   quieromudarme/ README.md

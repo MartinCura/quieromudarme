@@ -1,8 +1,8 @@
 **/tmp/
 **/bot*.session*
 
-api/quieromudarme/etl/logs/
-!api/quieromudarme/etl/logs/.gitkeep
+api/quieromudarme/pipelines/logs/
+!api/quieromudarme/pipelines/logs/.gitkeep
 
 api/**/*.tar.gz
 

@@ -34,7 +34,7 @@ WORKDIR /app
 RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-default-groups --no-install-project
 
 RUN umask 0000 && \
     uvx seleniumbase get chromedriver && \
@@ -47,7 +47,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md /app/
 COPY quieromudarme /app/quieromudarme
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --group dev --group etl
+    uv sync --frozen --no-default-groups --group dev --group etl
 WORKDIR /opt/airflow
 
 
@@ -57,9 +57,9 @@ ENV UV_COMPILE_BYTECODE=1
 WORKDIR /app
 COPY pyproject.toml uv.lock deploy/uv.toml README.md /app/
 COPY dist /app/dist
-COPY quieromudarme/etl/dags /opt/airflow/dags
+COPY quieromudarme/pipelines/dags /opt/airflow/dags
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --group etl
+    uv sync --frozen --no-default-groups --group etl
 WORKDIR /opt/airflow
 
 # TODO: clean up

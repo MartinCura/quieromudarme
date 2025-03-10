@@ -45,15 +45,15 @@ x-airflow-common: &airflow-common
     user: "1000:0"
     volumes:
         - edgedb-config:/home/airflow/.config/edgedb
-        - ./quieromudarme/etl/dags:/opt/airflow/dags
-        - ./quieromudarme/etl/logs:/opt/airflow/logs
-        - ./quieromudarme/etl/config:/opt/airflow/config
-        - ./quieromudarme/etl/plugins:/opt/airflow/plugins
+        - ./quieromudarme/pipelines/dags:/opt/airflow/dags
+        - ./quieromudarme/pipelines/logs:/opt/airflow/logs
+        - ./quieromudarme/pipelines/config:/opt/airflow/config
+        - ./quieromudarme/pipelines/plugins:/opt/airflow/plugins
         - ./quieromudarme:/app/quieromudarme
     develop:
         watch:
             - action: sync
-              path: quieromudarme/etl/dags
+              path: quieromudarme/pipelines/dags
               target: /opt/airflow/dags
             - action: sync
               path: quieromudarme
@@ -137,8 +137,32 @@ services:
             edgedb:
                 condition: service_healthy
 
+    scheduler:
+        build:
+            context: .
+            dockerfile: ./docker/scheduler.dockerfile
+            target: ${ENV:-dev}
+        restart: unless-stopped
+        volumes:
+            - edgedb-config:/root/.config/edgedb
+            - ./edgedb.toml:/app/edgedb.toml
+            - ./dbschema:/app/dbschema
+            - ./uv.lock:/app/uv.lock
+            - ./pyproject.toml:/app/pyproject.toml
+            - ./quieromudarme:/app/quieromudarme
+            - ./logs:/app/logs
+        env_file:
+            - .env
+        environment:
+            EDGEDB_INSTANCE: db
+        depends_on:
+            edgedb:
+                condition: service_healthy
+
     # TODO: can i reuse this postgres for both edgedb for app and the db used by airflow?
     postgres:
+        profiles:
+          - airflow
         image: postgres:15
         restart: always
         ports:
@@ -157,6 +181,8 @@ services:
 
     airflow-scheduler:
         <<: *airflow-common
+        profiles:
+          - airflow
         command: scheduler
         restart: unless-stopped
         shm_size: 3g
@@ -174,6 +200,8 @@ services:
 
     airflow-webserver:
         <<: *airflow-common
+        profiles:
+          - airflow
         command: webserver
         restart: unless-stopped
         ports:
@@ -191,10 +219,10 @@ services:
     airflow-init:
         <<: *airflow-common
         profiles:
-          - init
+          - airflow-init
         user: "0:0"
         volumes:
-            - ./quieromudarme/etl:/sources
+            - ./quieromudarme/pipelines:/sources
         environment:
             <<: *airflow-common-env
             _AIRFLOW_DB_MIGRATE: "true"
@@ -251,7 +279,7 @@ services:
     airflow-cli:
         <<: *airflow-common
         profiles:
-            - debug
+            - airflow-debug
         environment:
             <<: *airflow-common-env
             CONNECTION_CHECK_MAX_COUNT: "0"

@@ -25,11 +25,12 @@ dependencies = [
 
 [project.scripts]
 chatbot = "quieromudarme.chatbot.bot:run"
+scheduler = "quieromudarme.pipelines.jobs:run_scheduler"
 effiver_debug = "quieromudarme.effiver:debug"
 effiver = "quieromudarme.effiver:check_subscriptions_sync"
 
 [dependency-groups]
-etl = ["apache-airflow>=2.10.5,<2.11.0"]
+etl = ["apscheduler>=3.11.0"]
 dev = [
     "ruff>=0.9.9,<0.10.0",
     "mypy>=1.15.0,<2.0.0",
@@ -42,6 +43,7 @@ dev = [
 
 [tool.uv]
 package = true
+default-groups = ["dev", "etl"]
 
 [build-system]
 requires = ["hatchling"]
@@ -72,6 +74,7 @@ module = [
     "fake_useragent",
     "colorlog",
     "seleniumbase",
+    "apscheduler.*",  # py.typed will be available in v4
 ]
 ignore_missing_imports = true
 

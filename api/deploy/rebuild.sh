@@ -7,7 +7,7 @@ IFS=$'\n\t'
 
 cd /home/ubuntu/apps/quieromudarme/
 
-rm -rf dist/ dbschema/ static/  # quieromudarme/etl/{dags,plugins}/
+rm -rf dist/ dbschema/ static/  # quieromudarme/pipelines/{dags,plugins}/
 tar -xzf quieromudarme.tar.gz
 mv .env.production .env
 
